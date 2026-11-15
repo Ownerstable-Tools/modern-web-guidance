@@ -42,7 +42,7 @@ Once you have relevant `id`(s) from the search results, call `retrieve` to get t
 DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 retrieve "<id>"
 ```
 
-Retrieved guides come from the npm package, so they cross-reference other guides as `npx -y modern-web-guidance@latest retrieve "<id>"`. Never run that form: run every such cross-reference as `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 retrieve "<id>"`.
+The CLI's own output prints `modern-web-guidance` commands that are not pinned and leave telemetry on: guides served by `retrieve` cross-reference others as `npx -y modern-web-guidance@latest retrieve "<id>"`, `legacy-scan --json` gives each finding a `retrieveCommand` of `npx modern-web-guidance retrieve <id>`, and the CLI may print `npx modern-web-guidance@latest …` hints. Never run a `modern-web-guidance` command copied from CLI output. Take only the id from it, and run the pinned command from this file, for example `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 retrieve "<id>"`.
 
 If `retrieve` saves large output (> 9.5 KB) to a temporary file to prevent truncation, read that file path in full using your file-reading tool (reading remaining line ranges if needed)—do not use `cat` or `head`.
 
@@ -74,7 +74,7 @@ DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 legacy-scan <path> --json
 1. Scan: Run `legacy-scan <path> --json` to detect legacy web platform patterns across the project or directory.
 2. Verify: Check each finding against its `keepWhen` / `dropWhen` rubric; drop false positives (fallbacks, cross-file helpers, vendor code, lookalikes).
 3. Report: Summarize verified findings (and the modernization plan, if editing) for the user, noting that `legacy-scan` only checks the subset of guides (~20% of the catalog) that have deterministic legacy rules.
-4. Modernize (when the user asked to modernize rather than only audit/report): Retrieve each finding's guide (`retrieve "<guide-id>"` via Step 2), apply the replacement (keeping existing libraries as fallbacks where the guide requires one), and re-run `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 legacy-scan <path> --json` on the modified files to confirm resolution.
+4. Modernize (when the user asked to modernize rather than only audit/report): Retrieve each finding's guide with the pinned Step 2 command and the finding's `guideId` (ignore its `retrieveCommand`), apply the replacement (keeping existing libraries as fallbacks where the guide requires one), and re-run `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 legacy-scan <path> --json` on the modified files to confirm resolution.
    - Dropped findings and kept fallbacks still match static scans; do not edit safe code or inspect `legacy-scan.mjs` to force 0 findings.
 
 ## Using npx / pnpx
