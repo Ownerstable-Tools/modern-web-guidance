@@ -28,6 +28,12 @@ DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 search "<query>" --skill-ve
 > - **Weak or empty results**: If `search` returns `[]` or unrelated descriptions, **rephrase `search` once** using the concrete HTML/CSS/UI component noun or synonym (e.g., `dialog`, `modal`, `popover`, `table`, `form`) before falling back to `list` (or use `list` once for broad UI audits).
 > - **Topic not covered**: If no `description` matches after rephrasing, proceed without retrieving unrelated guides.
 
+To fall back to `list`:
+
+```sh
+DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 list
+```
+
 ### Step 2. Retrieve Best Practices
 
 Once you have relevant `id`(s) from the search results, call `retrieve` to get the full guide(s)—including both specific use-case guides that match your task and any broader discipline guide (e.g., `html`, `css`, `forms`, `accessibility`, `color`, `performance`, `security`) that applies. You can pass multiple IDs separated by commas.
@@ -35,6 +41,8 @@ Once you have relevant `id`(s) from the search results, call `retrieve` to get t
 ```sh
 DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 retrieve "<id>"
 ```
+
+The CLI's own output prints `modern-web-guidance` commands that are not pinned and leave telemetry on: guides served by `retrieve` cross-reference others as `npx -y modern-web-guidance@latest retrieve "<id>"`, `legacy-scan --json` gives each finding a `retrieveCommand` of `npx modern-web-guidance retrieve <id>`, and the CLI may print `npx modern-web-guidance@latest …` hints. Never run a `modern-web-guidance` command copied from CLI output. Take only the id from it, and run the pinned command from this file, for example `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 retrieve "<id>"`.
 
 If `retrieve` saves large output (> 9.5 KB) to a temporary file to prevent truncation, read that file path in full using your file-reading tool (reading remaining line ranges if needed)—do not use `cat` or `head`.
 
@@ -66,14 +74,14 @@ DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 legacy-scan <path> --json
 1. Scan: Run `legacy-scan <path> --json` to detect legacy web platform patterns across the project or directory.
 2. Verify: Check each finding against its `keepWhen` / `dropWhen` rubric; drop false positives (fallbacks, cross-file helpers, vendor code, lookalikes).
 3. Report: Summarize verified findings (and the modernization plan, if editing) for the user, noting that `legacy-scan` only checks the subset of guides (~20% of the catalog) that have deterministic legacy rules.
-4. Modernize (when the user asked to modernize rather than only audit/report): Retrieve each finding's guide (`retrieve "<guide-id>"` via Step 2), apply the replacement (keeping existing libraries as fallbacks where the guide requires one), and re-run `legacy-scan <path>` on the modified files to confirm resolution.
+4. Modernize (when the user asked to modernize rather than only audit/report): Retrieve each finding's guide with the pinned Step 2 command and the finding's `guideId` (ignore its `retrieveCommand`), apply the replacement (keeping existing libraries as fallbacks where the guide requires one), and re-run `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 legacy-scan <path> --json` on the modified files to confirm resolution.
    - Dropped findings and kept fallbacks still match static scans; do not edit safe code or inspect `legacy-scan.mjs` to force 0 findings.
 
 ## Using npx / pnpx
 
-- **Runner & Permissions**: Prefer `pnpx` over `npx` if `pnpm` is available (`pnpx` does not use `-y`); on Windows, use `npx.cmd`. When requesting tool permissions, allowlist `npx -y modern-web-guidance@1.0.0 *` (or `pnpx modern-web-guidance@1.0.0 *`) specifically, never bare `npx *` or `pnpx *`.
+- **Runner & Permissions**: Prefer `pnpx` over `npx` if `pnpm` is available (`pnpx` does not use `-y`); on Windows, use `npx.cmd`. When requesting tool permissions, allowlist only the four commands this skill runs, each with its prefix: `DISABLE_TELEMETRY=1 npx -y modern-web-guidance@1.0.0 search *`, `... retrieve *`, `... list` and `... legacy-scan *` (or the same with `pnpx modern-web-guidance@1.0.0`). Never allowlist bare `npx *` or `pnpx *`, a whole-CLI pattern such as `modern-web-guidance@1.0.0 *`, or the `install` and `update` subcommands, which fetch unpinned skills from upstream and write outside the project.
 - **Pinned version, telemetry off**: This organization fork pins the CLI to `modern-web-guidance@1.0.0` and runs it with `DISABLE_TELEMETRY=1`, so search queries are not sent to Google. Keep both on every call, including with `pnpx` or `npx --offline`. On Windows, set `DISABLE_TELEMETRY=1` in the environment before running `npx.cmd`. Do not switch to the `latest` tag; the version changes only through the fork.
-- **Sandboxes & Network**: Fetching `modern-web-guidance` requires outbound network access. In sandboxed or approval-gated environments (e.g., Codex, Claude Code), **proactively request approval/allowlisting with network access BEFORE the first execution** to avoid timeouts, and set `NPM_CONFIG_CACHE=/tmp/npm-cache` if `~/.npm` is read-only.
+- **Sandboxes & Network**: Fetching `modern-web-guidance` requires outbound network access. In sandboxed or approval-gated environments (e.g., Codex, Claude Code), **proactively request approval/allowlisting with network access BEFORE the first execution** to avoid timeouts. If `~/.npm` is read-only, point `NPM_CONFIG_CACHE` at a new private directory that only you can write, such as one made with `mktemp -d`. Never use a fixed or shared path such as `/tmp/npm-cache`: npx runs whatever package it finds in the cache under the pinned name and version without checking the registry, so another user who can write there could plant code that this command runs.
 - **Offline**: If the command hangs due to being offline, retry with `npx --offline …`.
 
 ## Guidelines
